@@ -690,6 +690,50 @@ body {
   gap: 6px;
 }
 
+.qm-ai-btn-row {
+  display: flex;
+  width: 100%;
+}
+
+.ai-breakdown-box {
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--text-color);
+  line-height: 1.6;
+  animation: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ai-breakdown-title {
+  font-weight: 700;
+  color: var(--accent-color);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed rgba(15, 23, 42, 0.05);
+  padding: 3px 0;
+}
+
+body:not(.theme-slate) .ai-breakdown-item {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.ai-breakdown-total {
+  font-weight: 700;
+  margin-top: 6px;
+  text-align: right;
+  color: var(--text-color);
+}
+
 .qm-cal-presets {
   display: flex;
   gap: 6px;

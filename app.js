@@ -44,6 +44,98 @@ document.addEventListener('DOMContentLoaded', () => {
   // Active logging meal slot
   let activeMealSlot = 'breakfast';
 
+  // ==========================================
+  // Dynamic AI Calorie Estimation Engine
+  // ==========================================
+  const CALORIE_DB = {
+    'ご飯': 240, '白米': 240, 'ライス': 240, 'おにぎり': 180, 'おむすび': 180, 'カレーライス': 700, 
+    'カツカレー': 1050, 'チャーハン': 650, '炒飯': 650, 'オムライス': 700, 'かつ丼': 850, 'カツ丼': 850,
+    '親子丼': 650, '牛丼': 700, '天丼': 750, '中華丼': 600, '麻婆豆腐': 400, 'すし': 500, '寿司': 500, 
+    'お寿司': 500, 'そば': 300, '蕎麦': 300, '天ぷらそば': 500, 'うどん': 320, 'きつねうどん': 400, 
+    '天ぷらうどん': 520, 'ラーメン': 600, 'らーめん': 600, '醤油ラーメン': 550, '味噌ラーメン': 650, 
+    '豚骨ラーメン': 750, 'とんこつラーメン': 750, 'パスタ': 600, 'スパゲティ': 600, 'カルボナーラ': 750, 
+    'ナポリタン': 600, 'ミートソース': 600, 'ピザ': 500, '食パン': 160, 'パン': 200, 'トースト': 200, 
+    'サンドイッチ': 300, 'クロワッサン': 200, 'ハンバーガー': 350, 'フライドポテト': 250,
+    'ハンバーグ': 400, '唐揚げ': 280, 'からあげ': 280, 'とんかつ': 550, 'トンカツ': 550, 'ステーキ': 450,
+    '焼肉': 500, '焼き鳥': 180, '餃子': 240, 'ギョーザ': 240, '春巻き': 200, '焼き魚': 180, '刺身': 140, 
+    'お刺身': 140, '天ぷら': 350, '野菜炒め': 150, '生姜焼き': 380, 'コロッケ': 200, '納豆': 100, 
+    '豆腐': 80, '冷奴': 60, 'ゆで卵': 80, '目玉焼き': 100, '卵焼き': 120, 'ソーセージ': 120, 'ハム': 60,
+    'サラダ': 40, 'シーザーサラダ': 150, 'ポテトサラダ': 180, 'キャベツ': 15, 'レタス': 10, 'ブロッコリー': 30,
+    '味噌汁': 35, 'みそ汁': 35, '豚汁': 120, 'コーンスープ': 110, 'コンソメスープ': 30, 'スープ': 60,
+    'ケーキ': 350, 'チョコレート': 220, 'チョコ': 220, 'クッキー': 120, 'アイス': 180, 'アイスクリーム': 200,
+    'シュークリーム': 220, 'プリン': 120, 'ドーナツ': 250, '和菓子': 150,
+    'ビール': 150, '缶ビール': 150, 'コーラ': 140, 'ジュース': 120, '牛乳': 130, 'コーヒー': 8,
+    'カフェラテ': 110, 'ウーロン茶': 0, 'お茶': 0, '緑茶': 0, '水': 0, 'プロテイン': 120
+  };
+
+  function estimateCaloriesAI(foodText) {
+    if (!foodText.trim()) return { total: 0, items: [] };
+
+    // Split text by standard Japanese separators (と、や、・、カンマ、スペース)
+    const separators = /[とや・,\s+、]+/g;
+    const rawTokens = foodText.split(separators);
+    const tokens = rawTokens.map(t => t.trim()).filter(t => t.length > 0);
+
+    let total = 0;
+    const items = [];
+
+    tokens.forEach(token => {
+      let cleaned = token;
+      let matchedCal = 0;
+      let isEstimated = false;
+
+      // 1. Direct match
+      if (CALORIE_DB[cleaned] !== undefined) {
+        matchedCal = CALORIE_DB[cleaned];
+      } else {
+        // Strip leading "お" or "ご" if exists and try again
+        if ((cleaned.startsWith('お') || cleaned.startsWith('ご')) && cleaned.length > 1) {
+          const stripped = cleaned.substring(1);
+          if (CALORIE_DB[stripped] !== undefined) {
+            matchedCal = CALORIE_DB[stripped];
+            cleaned = stripped;
+          }
+        }
+      }
+
+      // 2. Fuzzy Keyword heuristic match if not found directly
+      if (matchedCal === 0) {
+        isEstimated = true;
+        
+        if (cleaned.includes('唐揚') || cleaned.includes('からあげ') || cleaned.includes('天ぷら') || cleaned.includes('カツ') || cleaned.includes('フライ') || cleaned.includes('揚げ') || cleaned.includes('かつ')) {
+          matchedCal = 450;
+        } else if (cleaned.includes('ラーメン') || cleaned.includes('らーめん') || cleaned.includes('パスタ') || cleaned.includes('スパゲティ') || cleaned.includes('そば') || cleaned.includes('うどん') || cleaned.includes('麺')) {
+          matchedCal = 480;
+        } else if (cleaned.includes('丼') || cleaned.includes('カレー') || cleaned.includes('ピラフ') || cleaned.includes('炒飯') || cleaned.includes('チャーハン') || cleaned.includes('オムライス') || cleaned.includes('重')) {
+          matchedCal = 650;
+        } else if (cleaned.includes('サラダ') || cleaned.includes('野菜') || cleaned.includes('キャベツ') || cleaned.includes('レタス') || cleaned.includes('ナムル') || cleaned.includes('お浸し') || cleaned.includes('おひたし')) {
+          matchedCal = 45;
+        } else if (cleaned.includes('ステーキ') || cleaned.includes('肉') || cleaned.includes('牛') || cleaned.includes('豚') || cleaned.includes('チキン') || cleaned.includes('ソテー') || cleaned.includes('焼き鳥') || cleaned.includes('焼肉')) {
+          matchedCal = 380;
+        } else if (cleaned.includes('ケーキ') || cleaned.includes('チョコ') || cleaned.includes('クッキー') || cleaned.includes('アイス') || cleaned.includes('パフェ') || cleaned.includes('スイーツ') || cleaned.includes('クレープ') || cleaned.includes('パンケーキ')) {
+          matchedCal = 280;
+        } else if (cleaned.includes('汁') || cleaned.includes('スープ') || cleaned.includes('ポタージュ') || cleaned.includes('シチュー')) {
+          matchedCal = 40;
+        } else if (cleaned.includes('魚') || cleaned.includes('刺身') || cleaned.includes('鮭') || cleaned.includes('鯖') || cleaned.includes('さんま') || cleaned.includes('寿司') || cleaned.includes('すし')) {
+          matchedCal = 180;
+        } else if (cleaned.includes('コーヒー') || cleaned.includes('お茶') || cleaned.includes('ウーロン') || cleaned.includes('紅茶')) {
+          matchedCal = 10;
+        } else {
+          matchedCal = 220; // Default average fallback
+        }
+      }
+
+      total += matchedCal;
+      items.push({
+        name: token,
+        calories: matchedCal,
+        isEstimated: isEstimated
+      });
+    });
+
+    return { total, items };
+  }
+
   // Available themes catalog
   const THEMES = {
     slate: { name: 'サニースレート', cost: 0 },
@@ -916,6 +1008,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Focus first field
         document.getElementById('meal-name-input').value = '';
         document.getElementById('meal-cal-input').value = '';
+        
+        // Hide AI breakdown box
+        const aiBox = document.getElementById('ai-breakdown-box');
+        if (aiBox) {
+          aiBox.style.display = 'none';
+          aiBox.innerHTML = '';
+        }
       });
     });
 
@@ -928,15 +1027,82 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    // -- AI Calorie Estimator Trigger --
+    const aiEstBtn = document.getElementById('ai-estimate-btn');
+    if (aiEstBtn) {
+      aiEstBtn.addEventListener('click', () => {
+        const nameInput = document.getElementById('meal-name-input');
+        const calInput = document.getElementById('meal-cal-input');
+        const aiBox = document.getElementById('ai-breakdown-box');
+        
+        const text = nameInput.value.trim();
+        if (!text) {
+          alert('食べたものを入力してください（例: カツ丼、みそ汁）。AIが自動でカロリーを推論します。');
+          return;
+        }
+        
+        // Show scanning state
+        aiBox.style.display = 'block';
+        aiBox.innerHTML = `<div class="ai-breakdown-title" style="color:var(--text-muted);"><i data-lucide="loader" class="pulse"></i> AIが料理と調理法を解析中...</div>`;
+        if (window.lucide) window.lucide.createIcons();
+        
+        setTimeout(() => {
+          const est = estimateCaloriesAI(text);
+          calInput.value = est.total;
+          
+          if (est.items.length === 0) {
+            aiBox.style.display = 'none';
+            return;
+          }
+          
+          // Build breakdown HTML
+          let html = `
+            <div class="ai-breakdown-title"><i data-lucide="sparkles"></i> AI判定結果 (推定カロリー)</div>
+          `;
+          
+          est.items.forEach(item => {
+            html += `
+              <div class="ai-breakdown-item">
+                <span>・${item.name} ${item.isEstimated ? '<span style="font-size:9px;color:var(--text-muted);">[AI推論]</span>' : ''}</span>
+                <span class="font-outfit">${item.calories} kcal</span>
+              </div>
+            `;
+          });
+          
+          html += `
+            <div class="ai-breakdown-total">合計: <span class="color-emerald font-outfit" style="font-size:13px;">${est.total}</span> kcal</div>
+          `;
+          
+          aiBox.innerHTML = html;
+          if (window.lucide) window.lucide.createIcons();
+          
+          // Tiny hit spark
+          triggerPickaxeHitEffect();
+        }, 600); // 600ms loading effect for realistic AI vibe
+      });
+    }
+
     // -- Add Meal to diary --
     document.getElementById('add-meal-btn').addEventListener('click', () => {
       const nameInput = document.getElementById('meal-name-input');
       const calInput = document.getElementById('meal-cal-input');
       
-      const calories = parseInt(calInput.value);
-      if (isNaN(calories) || calories <= 0) {
-        alert('正しいカロリー（数字）を入力してください。');
+      const foodText = nameInput.value.trim();
+      if (!foodText) {
+        alert('食べたものを入力してください。');
         return;
+      }
+      
+      let calories = parseInt(calInput.value);
+      
+      // AI Calorie Auto-Estimation Heuristics if calories field is empty
+      if (isNaN(calories) || calories <= 0) {
+        const est = estimateCaloriesAI(foodText);
+        calories = est.total;
+        if (calories === 0) {
+          alert('カロリーを入力するか、正しい料理名を入力してください。');
+          return;
+        }
       }
       
       const todayLog = initTodayLog();
@@ -945,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       todayLog.meals.push({
         type: activeMealSlot,
-        name: nameInput.value.trim() || `${getMealNameJP(activeMealSlot)}`,
+        name: foodText,
         calories: calories,
         time: timeStr
       });
@@ -953,6 +1119,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Close Form and active check
       document.getElementById('quick-meal-form').classList.remove('active');
       document.querySelectorAll('.meal-check-grid .meal-check-item').forEach(i => i.classList.remove('active'));
+      
+      // Hide AI breakdown box
+      const aiBox = document.getElementById('ai-breakdown-box');
+      if (aiBox) {
+        aiBox.style.display = 'none';
+        aiBox.innerHTML = '';
+      }
       
       updateStreakAndCoinsForToday();
       saveData();

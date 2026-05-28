@@ -189,9 +189,17 @@
           <div class="meal-quick-form" id="quick-meal-form">
             <h5 id="meal-form-title">朝食の簡易入力</h5>
             <div class="qm-input-group">
-              <input type="text" id="meal-name-input" placeholder="例: トースト、プロテイン" class="custom-input">
+              <input type="text" id="meal-name-input" placeholder="食べたもの (例: カツ丼、みそ汁)" class="custom-input">
               <input type="number" id="meal-cal-input" placeholder="kcal" class="custom-input cal-input">
               <button id="add-meal-btn" class="btn btn-primary btn-icon"><i data-lucide="check"></i></button>
+            </div>
+            <div class="qm-ai-btn-row">
+              <button id="ai-estimate-btn" class="btn btn-secondary w-full btn-sm">
+                <i data-lucide="wand-2" class="color-orange" style="width:14px;height:14px;"></i> AIで自動カロリー推定
+              </button>
+            </div>
+            <div id="ai-breakdown-box" class="ai-breakdown-box" style="display:none;">
+              <!-- Dynamic AI entities breakdown -->
             </div>
             <div class="qm-cal-presets">
               <button class="btn btn-chip-sm" data-cal="100">+100</button>
