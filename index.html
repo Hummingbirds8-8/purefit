@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>PureSummit</title>
+  
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  
+  <!-- Google Fonts & Style libraries -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="theme-slate">
+  
+  <!-- Main app wrapper -->
+  <div id="app-container">
+    
+    <!-- HEADER STATS -->
+    <header class="app-header">
+      <div class="header-logo">
+        <span class="logo-icon"><i data-lucide="mountain"></i></span>
+        <h1 class="logo-text">PureSummit</h1>
+      </div>
+      <div class="header-stats">
+        <div class="stat-pill" title="継続記録日数">
+          <i data-lucide="flame" class="color-orange"></i>
+          <span id="streak-val">0</span>日目
+        </div>
+        <div class="stat-pill" title="アドベンチャーコイン">
+          <i data-lucide="coins" class="color-gold"></i>
+          <span id="coins-val">0</span>枚
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN VIEWS CONTAINER -->
+    <main class="app-main">
+      
+      <!-- 1. DASHBOARD TAB -->
+      <section id="dashboard-tab" class="tab-view active">
+        <!-- Calorie Mountain Main Display -->
+        <div class="mountain-card card">
+          <div class="mountain-visual">
+            <svg id="mountain-svg" viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+              <!-- Mountain Base Gradients -->
+              <defs>
+                <linearGradient id="mt-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="var(--accent-glow)" stop-opacity="0.9" />
+                  <stop offset="100%" stop-color="var(--card-bg)" stop-opacity="0.3" />
+                </linearGradient>
+                <linearGradient id="snow-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+                  <stop offset="100%" stop-color="var(--accent-color)" stop-opacity="0.5" />
+                </linearGradient>
+              </defs>
+              <!-- Background Grid Lines -->
+              <line x1="0" y1="200" x2="400" y2="200" stroke="var(--border-color)" stroke-width="1" stroke-dasharray="4,4" />
+              <line x1="0" y1="120" x2="400" y2="120" stroke="var(--border-color)" stroke-width="1" stroke-dasharray="4,4" />
+              <line x1="0" y1="40" x2="400" y2="40" stroke="var(--border-color)" stroke-width="1" stroke-dasharray="4,4" />
+              
+              <!-- Mountain Path Polyline -->
+              <path id="mountain-path" d="M 50 200 L 200 40 L 350 200" fill="url(#mt-grad)" stroke="var(--accent-color)" stroke-width="3" />
+              
+              <!-- Mountain Cap (Snow Peak) -->
+              <path d="M 200 40 L 230 72 L 210 65 L 200 75 L 190 65 L 170 72 Z" fill="url(#snow-grad)" />
+              
+              <!-- Climber Hiker Icon Overlay -->
+              <g id="climber-group" transform="translate(50,200)">
+                <circle cx="0" cy="0" r="14" fill="var(--bg-color)" stroke="var(--accent-color)" stroke-width="2" />
+                <path d="M-6 4 L0 -6 L6 4 Z" fill="var(--accent-color)" />
+                <circle cx="0" cy="-3" r="3" fill="#ffffff" />
+                <text x="0" y="18" text-anchor="middle" font-size="10" fill="#ffffff" font-family="Outfit">YOU</text>
+              </g>
+            </svg>
+            <div id="pickaxe-spark" class="spark-effect"><i data-lucide="sparkles"></i></div>
+          </div>
+          
+          <div class="mountain-stats">
+            <div class="mstat-group">
+              <span class="mstat-label">山頂（目標体重）まで</span>
+              <span class="mstat-val font-outfit" id="remaining-calories-val">36,000</span>
+              <span class="mstat-unit">kcal</span>
+            </div>
+            <div class="mstat-sub">
+              <span>初期高: <span id="initial-calories-val">36,000</span> kcal</span>
+              <span class="chipping-badge"><i data-lucide="hammer"></i> 今日: <span id="today-chipped-val">0</span> kcal削り</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Antigravity Companion Card -->
+        <div class="companion-card card">
+          <div class="companion-avatar">
+            <div class="avatar-face glow-effect">
+              <i data-lucide="sparkles" class="ai-spark"></i>
+            </div>
+          </div>
+          <div class="companion-bubble">
+            <p id="encouragement-text">PureSummitへようこそ！今日はどれくらい山を切り崩せるでしょうか。私のサポート機能で一緒に一歩ずつ進みましょう！</p>
+            <button id="affirmation-btn" class="btn btn-secondary btn-sm">
+              <i data-lucide="heart"></i> 励ましをチャージ！
+            </button>
+          </div>
+        </div>
+
+        <!-- DeskFit Integration Status Pill -->
+        <div class="deskfit-status-card card" id="deskfit-sync-card">
+          <div class="df-info">
+            <span class="df-indicator pulse"></span>
+            <div>
+              <h4 class="df-title">DeskFit (座位運動) 連動</h4>
+              <p class="df-desc" id="deskfit-desc">DeskFitのセーブデータを読み込み中...</p>
+            </div>
+          </div>
+          <button id="deskfit-sync-btn" class="btn btn-icon-sm" title="同期する"><i data-lucide="refresh-cw"></i></button>
+        </div>
+
+        <!-- Quick Log Dashboard Section -->
+        <div class="section-title">
+          <h3>今日の活動記録</h3>
+        </div>
+
+        <!-- Quick Step Count Card -->
+        <div class="quick-step-card card">
+          <div class="qs-header">
+            <div class="qs-title-wrapper">
+              <i data-lucide="footprints" class="color-cyan"></i>
+              <h4>今日の歩数入力</h4>
+            </div>
+            <span class="qs-val font-outfit" id="step-display">8,000</span>
+            <span class="qs-unit">歩</span>
+          </div>
+          
+          <div class="qs-slider-container">
+            <input type="range" id="step-slider" min="0" max="25000" step="500" value="8000" class="custom-slider">
+          </div>
+          
+          <div class="qs-presets">
+            <button class="btn btn-chip" data-steps="3000">3k歩</button>
+            <button class="btn btn-chip" data-steps="5000">5k歩</button>
+            <button class="btn btn-chip active" data-steps="8000">8k歩</button>
+            <button class="btn btn-chip" data-steps="10000">10k歩</button>
+            <button class="btn btn-chip" data-steps="15000">15k歩</button>
+          </div>
+          <div class="qs-cal-info">
+            <i data-lucide="zap"></i> 歩行消費換算: <span id="step-cal-val" class="font-outfit">320</span> kcal削り！
+          </div>
+        </div>
+
+        <!-- Quick Meal Intake Card -->
+        <div class="quick-meal-card card">
+          <div class="qm-header">
+            <i data-lucide="utensils-cross" class="color-emerald"></i>
+            <h4>今日の摂取ログ</h4>
+          </div>
+          <div class="meal-check-grid">
+            <div class="meal-check-item" data-meal="breakfast">
+              <span class="meal-icon"><i data-lucide="coffee"></i></span>
+              <span class="meal-name">朝食</span>
+              <span class="meal-state" id="state-breakfast">未入力</span>
+            </div>
+            <div class="meal-check-item" data-meal="lunch">
+              <span class="meal-icon"><i data-lucide="sun"></i></span>
+              <span class="meal-name">昼食</span>
+              <span class="meal-state" id="state-lunch">未入力</span>
+            </div>
+            <div class="meal-check-item" data-meal="dinner">
+              <span class="meal-icon"><i data-lucide="moon"></i></span>
+              <span class="meal-name">夕食</span>
+              <span class="meal-state" id="state-dinner">未入力</span>
+            </div>
+            <div class="meal-check-item" data-meal="snack">
+              <span class="meal-icon"><i data-lucide="cookie"></i></span>
+              <span class="meal-name">間食</span>
+              <span class="meal-state" id="state-snack">未入力</span>
+            </div>
+          </div>
+          
+          <div class="meal-quick-form" id="quick-meal-form">
+            <h5 id="meal-form-title">朝食の簡易入力</h5>
+            <div class="qm-input-group">
+              <input type="text" id="meal-name-input" placeholder="例: トースト、プロテイン" class="custom-input">
+              <input type="number" id="meal-cal-input" placeholder="kcal" class="custom-input cal-input">
+              <button id="add-meal-btn" class="btn btn-primary btn-icon"><i data-lucide="check"></i></button>
+            </div>
+            <div class="qm-cal-presets">
+              <button class="btn btn-chip-sm" data-cal="100">+100</button>
+              <button class="btn btn-chip-sm" data-cal="300">+300</button>
+              <button class="btn btn-chip-sm" data-cal="500">+500</button>
+              <button class="btn btn-chip-sm" data-cal="700">+700</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 2. DIARY & GRAPH TAB -->
+      <section id="diary-tab" class="tab-view">
+        <div class="diary-input-grid">
+          <!-- Weight Fat Input Card -->
+          <div class="weight-fat-card card">
+            <h4>体重・体脂肪の記録</h4>
+            <div class="wf-input-row">
+              <div class="input-block">
+                <label for="weight-input">体重 (kg)</label>
+                <input type="number" id="weight-input" step="0.1" class="custom-input" placeholder="--.-">
+              </div>
+              <div class="input-block">
+                <label for="fat-input">体脂肪率 (%)</label>
+                <input type="number" id="fat-input" step="0.1" class="custom-input" placeholder="--.-">
+              </div>
+              <button id="save-wf-btn" class="btn btn-primary">記録</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Weight Charts -->
+        <div class="chart-card card">
+          <div class="chart-header">
+            <h4>体重推移グラフ</h4>
+            <div class="chart-period">
+              <button class="btn btn-chip-sm active" data-period="7">7日</button>
+              <button class="btn btn-chip-sm" data-period="30">30日</button>
+              <button class="btn btn-chip-sm" data-period="all">全期間</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Daily Logs Food List -->
+        <div class="food-list-card card">
+          <div class="fl-header">
+            <h4>本日の食事・運動記録リスト</h4>
+            <span class="fl-total">摂取: <span id="total-intake-val">0</span> kcal</span>
+          </div>
+          <div class="fl-empty" id="logs-empty-msg">
+            <i data-lucide="history"></i>
+            <p>今日の登録データはまだありません。</p>
+          </div>
+          <ul class="log-list" id="log-list-ul">
+            <!-- Dynamic meal/exercise rows will go here -->
+          </ul>
+        </div>
+      </section>
+      
+      <!-- 3. THEME SHOP TAB -->
+      <section id="shop-tab" class="tab-view">
+        <div class="shop-intro card">
+          <div class="shop-title-row">
+            <i data-lucide="store" class="color-gold"></i>
+            <h3>プレミアムデザインショップ</h3>
+          </div>
+          <p>山を削って獲得したコインで、PureSummitを好きな色に衣替えしましょう！</p>
+          <div class="shop-coins-banner">
+            <span>所持コイン:</span>
+            <span class="shop-coins-val font-outfit" id="shop-coins-val">0</span>
+            <span>枚</span>
+          </div>
+        </div>
+
+        <div class="theme-grid">
+          <!-- Slate Theme -->
+          <div class="theme-card card active" data-theme-id="slate">
+            <div class="theme-preview palette-slate">
+              <div class="c1"></div><div class="c2"></div><div class="c3"></div>
+            </div>
+            <div class="theme-details">
+              <h4>サニースレート (デフォルト)</h4>
+              <p>清潔感溢れるサニーホワイトと爽快なエメラルドグリーン。</p>
+              <button class="btn btn-primary btn-sm btn-theme" data-cost="0">適用中</button>
+            </div>
+          </div>
+
+          <!-- Cyber Theme -->
+          <div class="theme-card card" data-theme-id="cyber">
+            <div class="theme-preview palette-cyber">
+              <div class="c1"></div><div class="c2"></div><div class="c3"></div>
+            </div>
+            <div class="theme-details">
+              <h4>サイバーネオン</h4>
+              <p>深宇宙ブラックに瞬く鮮やかなネオンピンクとシアンブルー。</p>
+              <button class="btn btn-secondary btn-sm btn-theme" data-cost="100"><i data-lucide="lock"></i> 100 コイン</button>
+            </div>
+          </div>
+
+          <!-- Forest Theme -->
+          <div class="theme-card card" data-theme-id="forest">
+            <div class="theme-preview palette-forest">
+              <div class="c1"></div><div class="c2"></div><div class="c3"></div>
+            </div>
+            <div class="theme-details">
+              <h4>フォレストグリーン</h4>
+              <p>疲れた目を癒やす優しいモスグリーンとナチュラルベージュ。</p>
+              <button class="btn btn-secondary btn-sm btn-theme" data-cost="150"><i data-lucide="lock"></i> 150 コイン</button>
+            </div>
+          </div>
+
+          <!-- Sakura Theme -->
+          <div class="theme-card card" data-theme-id="sakura">
+            <div class="theme-preview palette-sakura">
+              <div class="c1"></div><div class="c2"></div><div class="c3"></div>
+            </div>
+            <div class="theme-details">
+              <h4>サクラドロップ</h4>
+              <p>心躍る華やかな桜ピンクとホワイトのエレガントなテーマ。</p>
+              <button class="btn btn-secondary btn-sm btn-theme" data-cost="200"><i data-lucide="lock"></i> 200 コイン</button>
+            </div>
+          </div>
+
+          <!-- Gold Theme -->
+          <div class="theme-card card" data-theme-id="gold">
+            <div class="theme-preview palette-gold">
+              <div class="c1"></div><div class="c2"></div><div class="c3"></div>
+            </div>
+            <div class="theme-details">
+              <h4>ゴールドサミット</h4>
+              <p>登頂者にふさわしい至高のゴールドと漆黒の最高級スキン。</p>
+              <button class="btn btn-secondary btn-sm btn-theme" data-cost="500"><i data-lucide="lock"></i> 500 コイン</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 4. PROFILE & SETTINGS TAB -->
+      <section id="settings-tab" class="tab-view">
+        <!-- Profile Config Card -->
+        <div class="profile-card card">
+          <div class="card-header-with-icon">
+            <i data-lucide="user-cog" class="color-blue"></i>
+            <h4>身体プロファイル設定</h4>
+          </div>
+          <form id="profile-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="prof-age">年齢 (才)</label>
+                <input type="number" id="prof-age" value="28" min="1" max="120" class="custom-input" required>
+              </div>
+              <div class="form-group">
+                <label for="prof-gender">性別</label>
+                <select id="prof-gender" class="custom-input" required>
+                  <option value="male">男性</option>
+                  <option value="female" selected>女性</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="prof-height">身長 (cm)</label>
+                <input type="number" id="prof-height" value="158" min="50" max="250" class="custom-input" required>
+              </div>
+              <div class="form-group">
+                <label for="prof-weight">現在の体重 (kg)</label>
+                <input type="number" id="prof-weight" value="55.0" step="0.1" class="custom-input" required>
+              </div>
+              <div class="form-group">
+                <label for="prof-target">目標体重 (kg)</label>
+                <input type="number" id="prof-target" value="50.0" step="0.1" class="custom-input" required>
+              </div>
+              <div class="form-group">
+                <label for="prof-active">普段の活動レベル</label>
+                <select id="prof-active" class="custom-input" required>
+                  <option value="1.2" selected>ほぼ座り仕事 (あまり運動しない)</option>
+                  <option value="1.375">軽運動派 (週1-3回の軽い運動)</option>
+                  <option value="1.55">中運動派 (週3-5回の活発な運動)</option>
+                  <option value="1.725">アスリート級 (毎日強度の高い運動)</option>
+                </select>
+              </div>
+              <div class="form-group full-width">
+                <label for="prof-pace">減量の目標ペース</label>
+                <select id="prof-pace" class="custom-input" required>
+                  <option value="250">ゆっくりペース (-250 kcal/日)</option>
+                  <option value="500" selected>標準ペース (-500 kcal/日)</option>
+                  <option value="750">スピードペース (-750 kcal/日)</option>
+                  <option value="0">現状維持 (TDEEと同等目標)</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="tdee-result-box" id="tdee-calc-box">
+              <div class="tdee-row">
+                <span>基礎代謝量 (BMR):</span>
+                <span class="font-outfit"><strong id="res-bmr">1,250</strong> kcal/日</span>
+              </div>
+              <div class="tdee-row">
+                <span>一日の総消費量 (TDEE):</span>
+                <span class="font-outfit"><strong id="res-tdee">1,500</strong> kcal/日</span>
+              </div>
+              <div class="tdee-row highlight">
+                <span>一日の目標摂取カロリー:</span>
+                <span class="font-outfit"><strong id="res-target-limit">1,000</strong> kcal/日</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full mt-4">プロフィール更新＆登山開始！</button>
+          </form>
+        </div>
+
+        <!-- Developer and Data Reset Option -->
+        <div class="admin-card card">
+          <h4>データ管理</h4>
+          <p class="admin-warning">全ての記録データと解放済みテーマを削除し、初期状態にリセットします。</p>
+          <div class="admin-buttons">
+            <button id="reset-app-btn" class="btn btn-danger btn-sm"><i data-lucide="trash-2"></i> データをリセット</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER NAV NAVIGATION -->
+    <nav class="app-nav">
+      <button class="nav-item active" data-target="dashboard-tab">
+        <i data-lucide="home"></i>
+        <span>山頂ログ</span>
+      </button>
+      <button class="nav-item" data-target="diary-tab">
+        <i data-lucide="line-chart"></i>
+        <span>記録・グラフ</span>
+      </button>
+      <button class="nav-item" data-target="shop-tab">
+        <i data-lucide="store"></i>
+        <span>テーマショップ</span>
+      </button>
+      <button class="nav-item" data-target="settings-tab">
+        <i data-lucide="user-cog"></i>
+        <span>設定</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- Lucide icons script init -->
+  <script>
+    // Initialize icons globally
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+  
+  <!-- Main application script -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "PureSummit",
+  "short_name": "PureSummit",
+  "description": "逆算型・カロリー登山トラッカー",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
